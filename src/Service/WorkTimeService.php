@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use App\Domain\Rule\MaxHoursValidator;
+use App\Domain\Rule\UniqueDayValidator;
 use App\Entity\Employee;
 use App\Entity\WorkTime;
 use Doctrine\ORM\EntityManagerInterface;
@@ -13,11 +15,19 @@ class WorkTimeService
 {
     private EntityManagerInterface $em;
     private ValidatorInterface $validator;
+    private UniqueDayValidator $uniqueDayValidator;
+    private MaxHoursValidator $maxHoursValidator;
 
-    public function __construct(EntityManagerInterface $em, ValidatorInterface $validator)
-    {
+    public function __construct(
+        EntityManagerInterface $em,
+        ValidatorInterface $validator,
+        UniqueDayValidator $uniqueDayValidator,
+        MaxHoursValidator $maxHoursValidator
+    ) {
         $this->em = $em;
         $this->validator = $validator;
+        $this->uniqueDayValidator = $uniqueDayValidator;
+        $this->maxHoursValidator = $maxHoursValidator;
     }
 
     public function registerWorkTime(?string $employeeId, ?string $start, ?string $end, Employee $employee = null): WorkTime
@@ -44,17 +54,15 @@ class WorkTimeService
             throw new BadRequestHttpException('End time must be after start time');
         }
 
-        $diff = $startDate->diff($endDate);
-        $hours = $diff->h + ($diff->i / 60);
-        if ($hours > 12 || $diff->days > 0) {
-            throw new BadRequestHttpException('Work time cannot exceed 12 hours or span multiple days');
-        }
-
         $workTime = new WorkTime($employee, $startDate, $endDate);
+
         $errors = $this->validator->validate($workTime);
         if (count($errors) > 0) {
             throw new BadRequestHttpException((string) $errors);
         }
+
+        $this->uniqueDayValidator->validate($workTime);
+        $this->maxHoursValidator->validate($workTime);
 
         $this->em->persist($workTime);
         $this->em->flush();
