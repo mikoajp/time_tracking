@@ -102,9 +102,17 @@ Invoke-RestMethod -Uri "http://localhost:8001/api/employees" -Method Post -Heade
 
 ### Example: Register Work Time
 ```bash
-curl -X POST http://localhost:8000/work-time \
--H "Content-Type: application/json" \
--d '{"employee_id": "123e4567-e89b-12d3-a456-426614174000", "start": "2025-03-01 08:00:00", "end": "2025-03-01 14:00:00"}'
+$body = @{
+
+    employeeId = "123e4567-e89b-12d3-a456-426614174000"
+
+    start = "2025-03-01 08:00"
+
+    end = "2024-03-01 16:00"
+
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8001/api/work-times" -Method Post -Headers @{"Content-Type"="application/json"} -Body $body
 ```
 **Expected response:**
 ```json
@@ -113,7 +121,7 @@ curl -X POST http://localhost:8000/work-time \
 
 ### Example: Get Monthly Summary
 ```bash
-curl http://localhost:8000/summary/123e4567-e89b-12d3-a456-426614174000/2025-03
+irm "http://localhost:8001/api/summary?employeeId=123e4567-e89b-12d3-a456-426614174000&date=2025-03"
 ```
 **Expected response:**
 ```json
