@@ -4,21 +4,39 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    monthly_norm: '%env(int:MONTHLY_NORM)%'
+    base_rate: '%env(int:BASE_RATE)%'
+    overtime_multiplier: '%env(float:OVERTIME_MULTIPLIER)%'
 
 services:
-    # default configuration for services in *this* file
+    # Domyślna konfiguracja dla wszystkich usług w App\
     _defaults:
-        autowire: true      # Automatically injects dependencies in your services.
-        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        autowire: true      # Automatyczne wstrzykiwanie zależności
+        autoconfigure: true # Automatyczne tagowanie usług (np. jako kontrolery)
 
-    # makes classes in src/ available to be used as services
-    # this creates a service per class whose id is the fully-qualified class name
     App\:
-        resource: '../src/'
-        exclude:
-            - '../src/DependencyInjection/'
-            - '../src/Entity/'
-            - '../src/Kernel.php'
+        resource: '../src/*'
+        exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+
+    App\Infra\HoursProcessor:
+
+
+    App\Repository\WorkTimeRepository:
+
+    App\Service\Strategy\MonthlySummaryStrategy:
+        arguments:
+            $monthlyNorm: '%monthly_norm%'
+            $baseRate: '%base_rate%'
+            $overtimeMultiplier: '%overtime_multiplier%'
+
+    App\Service\Strategy\DailySummaryStrategy:
+        arguments:
+            $baseRate: '%base_rate%'
+
+    App\Service\SummaryService:
+        arguments:
+            $workTimeRepository: '@App\Repository\WorkTimeRepository'
+            $hoursProcessor: '@App\Infra\HoursProcessor'
+            $monthlyStrategy: '@App\Service\Strategy\MonthlySummaryStrategy'
+            $dailyStrategy: '@App\Service\Strategy\DailySummaryStrategy'
