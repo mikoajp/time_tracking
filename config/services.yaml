@@ -13,6 +13,10 @@ services:
     _defaults:
         autowire: true      # Automatyczne wstrzykiwanie zależności
         autoconfigure: true # Automatyczne tagowanie usług (np. jako kontrolery)
+        bind:
+            $monthlyNorm: '%monthly_norm%'
+            $baseRate: '%base_rate%'
+            $overtimeMultiplier: '%overtime_multiplier%'
 
     App\:
         resource: '../src/*'
@@ -24,15 +28,9 @@ services:
 
     App\Repository\WorkTimeRepository:
 
-    App\Service\Strategy\MonthlySummaryStrategy:
-        arguments:
-            $monthlyNorm: '%monthly_norm%'
-            $baseRate: '%base_rate%'
-            $overtimeMultiplier: '%overtime_multiplier%'
+    App\Service\Strategy\MonthlySummaryStrategy: ~
 
-    App\Service\Strategy\DailySummaryStrategy:
-        arguments:
-            $baseRate: '%base_rate%'
+    App\Service\Strategy\DailySummaryStrategy: ~
 
     App\Service\SummaryService:
         arguments:
