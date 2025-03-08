@@ -2,24 +2,24 @@
 
 namespace App\Domain\Rule;
 
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use DateTimeImmutable;
 
 class DateRangeResolver
 {
+
+    /**
+     * @throws \DateMalformedStringException
+     */
     public function resolve(string $date, bool $isMonth): array
     {
-        try {
-            $dateObj = new \DateTimeImmutable($date, new \DateTimeZone('UTC'));
-        } catch (\Exception $e) {
-            throw new BadRequestHttpException('Invalid date value: ' . $e->getMessage());
-        }
+        $dateObj = new DateTimeImmutable($date);
 
         if ($isMonth) {
-            $startDate = $dateObj->modify('first day of this month');
-            $endDate = $dateObj->modify('last day of this month');
+            $startDate = $dateObj->modify('first day of this month 00:00:00');
+            $endDate = $dateObj->modify('last day of this month 23:59:59');
         } else {
-            $startDate = $dateObj;
-            $endDate = $dateObj;
+            $startDate = $dateObj->setTime(0, 0, 0);
+            $endDate = $dateObj->setTime(23, 59, 59);
         }
 
         return [$dateObj, $startDate, $endDate];

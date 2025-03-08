@@ -9,6 +9,8 @@
 /vendor/
 .idea/
 .env
+.env.dev
+migrations/
 ###< symfony/framework-bundle ###
 
 ###> phpunit/phpunit ###
