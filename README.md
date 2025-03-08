@@ -49,7 +49,7 @@ composer install
 
 ### 3. Configure Database
 #### Option 1: Using a Local MariaDB Server
-Copy `.env` to `.env.local` and update the database settings:
+Copy `.env.dev` to `.env` and update the database settings:
 ```env
 MONTHLY_NORM=40
 BASE_RATE=20
@@ -92,11 +92,11 @@ $body = @{
     lastName = "Kowalski"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:8001/api/employees" -Method Post -Headers @{"Content-Type"="application/json"} -Body $body```
+Invoke-RestMethod -Uri "http://localhost:8000/api/employees" -Method Post -Headers @{"Content-Type"="application/json"} -Body $body
 ```
 **Expected response:**
 ```json
-{"message": "123e4567-e89b-12d3-a456-426614174000!"}
+{"message": "123e4567-e89b-12d3-a456-426614174000"}
 ```
 
 
@@ -112,7 +112,7 @@ $body = @{
 
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:8001/api/work-times" -Method Post -Headers @{"Content-Type"="application/json"} -Body $body
+Invoke-RestMethod -Uri "http://localhost:8000/api/work-times" -Method Post -Headers @{"Content-Type"="application/json"} -Body $body
 ```
 **Expected response:**
 ```json
@@ -121,7 +121,7 @@ Invoke-RestMethod -Uri "http://localhost:8001/api/work-times" -Method Post -Head
 
 ### Example: Get Monthly Summary
 ```bash
-irm "http://localhost:8001/api/summary?employeeId=123e4567-e89b-12d3-a456-426614174000&date=2025-03"
+irm "http://localhost:8000/api/summary?employeeId=123e4567-e89b-12d3-a456-426614174000&date=2025-03"
 ```
 **Expected response:**
 ```json
@@ -137,11 +137,11 @@ irm "http://localhost:8001/api/summary?employeeId=123e4567-e89b-12d3-a456-426614
 ```
 
 ## API Endpoints
-| Method | Endpoint | Description | Request Body |
-|--------|---------|-------------|--------------|
-| **POST** | `/employees` | Create a new employee | `{ "imie": "Jan", "nazwisko": "Kowalski" }` |
-| **POST** | `/work-time` | Register work time for an employee | `{ "employee_id": "uuid", "start": "YYYY-MM-DD HH:MM:SS", "end": "YYYY-MM-DD HH:MM:SS" }` |
-| **GET** | `/summary/{employeeId}/{date}` | Get work time summary (day/month) | N/A (path parameters: UUID and date) |
+| Method | Endpoint | Description | Request Body                                                                        |
+|--------|---------|-------------|-------------------------------------------------------------------------------------|
+| **POST** | `/employees` | Create a new employee | `{ "firstName": "Jan", "lastName": "Kowalski" }`                                    |
+| **POST** | `/work-time` | Register work time for an employee | `{ "employee_id": "uuid", "start": "YYYY-MM-DD HH:MM", "end": "YYYY-MM-DD HH:MM" }` |
+| **GET** | `/summary/{employeeId}/{date}` | Get work time summary (day/month) | N/A (path parameters: UUID and date)                                                |
 
 ## Configuration
 Application parameters are managed via `.env`:
