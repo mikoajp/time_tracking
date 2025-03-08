@@ -2,70 +2,40 @@
 
 namespace App\Service;
 
-use App\Domain\Rule\MaxHoursValidator;
-use App\Domain\Rule\UniqueDayValidator;
+use App\Domain\Rule\EmployeeValidator;
+use App\Domain\Validator\WorkTimeValidator;
 use App\Entity\Employee;
 use App\Entity\WorkTime;
+use App\Repository\WorkTimeRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class WorkTimeService
 {
+    private WorkTimeRepository $workTimeRepository;
+    private WorkTimeValidator $workTimeValidator;
     private EntityManagerInterface $em;
-    private ValidatorInterface $validator;
-    private UniqueDayValidator $uniqueDayValidator;
-    private MaxHoursValidator $maxHoursValidator;
+    private EmployeeValidator $employeeValidator;
 
     public function __construct(
+        WorkTimeRepository $workTimeRepository,
+        WorkTimeValidator $workTimeValidator,
         EntityManagerInterface $em,
-        ValidatorInterface $validator,
-        UniqueDayValidator $uniqueDayValidator,
-        MaxHoursValidator $maxHoursValidator
+        EmployeeValidator $employeeValidator
     ) {
+        $this->workTimeRepository = $workTimeRepository;
+        $this->workTimeValidator = $workTimeValidator;
         $this->em = $em;
-        $this->validator = $validator;
-        $this->uniqueDayValidator = $uniqueDayValidator;
-        $this->maxHoursValidator = $maxHoursValidator;
+        $this->employeeValidator = $employeeValidator;
     }
 
     public function registerWorkTime(?string $employeeId, ?string $start, ?string $end, Employee $employee = null): WorkTime
     {
-        if (empty($employeeId) || empty($start) || empty($end)) {
-            throw new BadRequestHttpException('Missing required fields: employeeId, start, end');
-        }
-
         if (!$employee) {
-            $employee = $this->em->getRepository(Employee::class)->find($employeeId);
-            if (!$employee) {
-                throw new NotFoundHttpException('Employee not found');
-            }
+            $employee = $this->employeeValidator->findEmployeeOrFail($employeeId ?? '');
         }
 
-        try {
-            $startDate = new \DateTime($start);
-            $endDate = new \DateTime($end);
-        } catch (\Exception $e) {
-            throw new BadRequestHttpException('Invalid date format');
-        }
-
-        if ($endDate <= $startDate) {
-            throw new BadRequestHttpException('End time must be after start time');
-        }
-
-        $workTime = new WorkTime($employee, $startDate, $endDate);
-
-        $errors = $this->validator->validate($workTime);
-        if (count($errors) > 0) {
-            throw new BadRequestHttpException((string) $errors);
-        }
-
-        $this->uniqueDayValidator->validate($workTime);
-        $this->maxHoursValidator->validate($workTime);
-
-        $this->em->persist($workTime);
-        $this->em->flush();
+        $workTime = $this->workTimeValidator->validateWorkTimeData($employeeId, $start, $end, $employee);
+        $this->workTimeRepository->save($workTime);
 
         return $workTime;
     }

@@ -2,38 +2,45 @@
 
 namespace App\Service;
 
-use App\Infra\HoursProcessor;
-use App\Domain\Rule\SummaryRequestValidator;
 use App\Domain\Rule\DateRangeResolver;
-use App\Domain\Rule\EmployeeExistenceValidator;
+use App\Infra\HoursProcessor;
 use App\Repository\WorkTimeRepository;
-use App\Service\Strategy\SummaryStrategyResolver;
+use App\Service\Strategy\MonthlySummaryStrategy;
+use App\Service\Strategy\DailySummaryStrategy;
+use App\Domain\Rule\SummaryRequestValidator;
+use App\Domain\Rule\EmployeeValidator;
 
 class SummaryService
 {
+    private SummaryRequestValidator $validator;
     private WorkTimeRepository $workTimeRepository;
     private HoursProcessor $hoursProcessor;
-    private SummaryRequestValidator $validator;
+    private EmployeeValidator $employeeChecker;
     private DateRangeResolver $dateRangeResolver;
-    private EmployeeExistenceValidator $employeeChecker;
-    private SummaryStrategyResolver $strategyResolver;
+    private MonthlySummaryStrategy $monthlyStrategy;
+    private DailySummaryStrategy $dailyStrategy;
 
     public function __construct(
-        WorkTimeRepository         $workTimeRepository,
-        HoursProcessor             $hoursProcessor,
-        SummaryRequestValidator    $validator,
-        DateRangeResolver          $dateRangeResolver,
-        EmployeeExistenceValidator $employeeChecker,
-        SummaryStrategyResolver    $strategyResolver
+        WorkTimeRepository $workTimeRepository,
+        HoursProcessor $hoursProcessor,
+        MonthlySummaryStrategy $monthlyStrategy,
+        DailySummaryStrategy $dailyStrategy,
+        SummaryRequestValidator $validator,
+        EmployeeValidator $employeeChecker,
+        DateRangeResolver $dateRangeResolver
     ) {
         $this->workTimeRepository = $workTimeRepository;
         $this->hoursProcessor = $hoursProcessor;
+        $this->monthlyStrategy = $monthlyStrategy;
+        $this->dailyStrategy = $dailyStrategy;
         $this->validator = $validator;
-        $this->dateRangeResolver = $dateRangeResolver;
         $this->employeeChecker = $employeeChecker;
-        $this->strategyResolver = $strategyResolver;
+        $this->dateRangeResolver = $dateRangeResolver;
     }
 
+    /**
+     * @throws \DateMalformedStringException
+     */
     public function getSummary(string $employeeId, string $date): array
     {
         [$uuid, $isMonth] = $this->validator->validate($employeeId, $date);
@@ -47,7 +54,7 @@ class SummaryService
         $this->employeeChecker->check($uuid, $workTimes);
 
         $groupedHours = $this->hoursProcessor->processWorkTimes($workTimes);
-        $strategy = $this->strategyResolver->resolve($isMonth);
+        $strategy = $isMonth ? $this->monthlyStrategy : $this->dailyStrategy;
 
         return $strategy->calculate($groupedHours, $dateObj)->toArray();
     }
