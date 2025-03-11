@@ -1,38 +1,34 @@
-# This file is the entry point to configure your own services.
-# Files in the packages/ subdirectory configure your dependencies.
-
-# Put parameters here that don't need to change on each machine where the app is deployed
-# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+# config/services.yaml
 parameters:
     monthly_norm: '%env(int:MONTHLY_NORM)%'
     base_rate: '%env(int:BASE_RATE)%'
     overtime_multiplier: '%env(float:OVERTIME_MULTIPLIER)%'
 
 services:
-    # Domyślna konfiguracja dla wszystkich usług w App\
     _defaults:
-        autowire: true      # Automatyczne wstrzykiwanie zależności
-        autoconfigure: true # Automatyczne tagowanie usług (np. jako kontrolery)
+        autowire: true
+        autoconfigure: true
+        bind:
+            $monthlyNorm: '%monthly_norm%'
+            $baseRate: '%base_rate%'
+            $overtimeMultiplier: '%overtime_multiplier%'
 
     App\:
         resource: '../src/*'
         exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
 
-
-    App\Infra\HoursProcessor:
-
-
-    App\Repository\WorkTimeRepository:
-
-    App\Service\Strategy\MonthlySummaryStrategy:
-        arguments:
-            $monthlyNorm: '%monthly_norm%'
-            $baseRate: '%base_rate%'
-            $overtimeMultiplier: '%overtime_multiplier%'
-
-    App\Service\Strategy\DailySummaryStrategy:
-        arguments:
-            $baseRate: '%base_rate%'
+    App\Infra\HoursProcessor: ~
+    App\Repository\WorkTimeRepository: ~
+    App\Service\Strategy\MonthlySummaryStrategy: ~
+    App\Service\Strategy\DailySummaryStrategy: ~
+    App\Domain\Rule\SummaryRequestValidator: ~
+    App\Domain\Rule\EmployeeValidator: ~
+    App\Service\DateRangeResolver: ~
+    App\Service\StrategyResolver: ~
+    App\Service\WorkTimeService: ~
+    App\Domain\Validator\WorkTimeValidator: ~
+    App\Domain\Rule\UniqueDayValidator: ~
+    App\Domain\Rule\MaxHoursValidator: ~
 
     App\Service\SummaryService:
         arguments:
@@ -40,3 +36,6 @@ services:
             $hoursProcessor: '@App\Infra\HoursProcessor'
             $monthlyStrategy: '@App\Service\Strategy\MonthlySummaryStrategy'
             $dailyStrategy: '@App\Service\Strategy\DailySummaryStrategy'
+            $validator: '@App\Domain\Rule\SummaryRequestValidator'
+            $employeeChecker: '@App\Domain\Rule\EmployeeValidator'
+            $dateRangeResolver: '@App\Domain\Rule\DateRangeResolver'

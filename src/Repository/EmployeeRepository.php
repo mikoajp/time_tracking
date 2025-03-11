@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Domain\Rule\EmployeeValidator;
 use App\Entity\Employee;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -9,13 +10,23 @@ use Symfony\Component\Uid\Uuid;
 
 class EmployeeRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
-    {
+    private EmployeeValidator $employeeValidator;
+
+    public function __construct(
+        ManagerRegistry $registry,
+        EmployeeValidator $employeeValidator
+    ) {
         parent::__construct($registry, Employee::class);
+        $this->employeeValidator = $employeeValidator;
     }
 
-    public function findByUuid(string $uuid): ?Employee
+    public function createEmployee(array $data): Employee
     {
-        return $this->find(Uuid::fromString($uuid)->toBinary());
+        $employee = $this->employeeValidator->validateEmployeeData($data);
+
+        $this->getEntityManager()->persist($employee);
+        $this->getEntityManager()->flush();
+
+        return $employee;
     }
 }

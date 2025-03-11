@@ -15,6 +15,12 @@ class WorkTimeRepository extends ServiceEntityRepository
         parent::__construct($registry, WorkTime::class);
     }
 
+    public function save(WorkTime $workTime): void
+    {
+        $this->getEntityManager()->persist($workTime);
+        $this->getEntityManager()->flush();
+    }
+
     public function findByEmployeeAndPeriod(Uuid $employeeId, DateTimeImmutable $startDate, DateTimeImmutable $endDate): array
     {
         return $this->createQueryBuilder('wt')
