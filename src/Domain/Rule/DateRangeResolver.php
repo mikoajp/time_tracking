@@ -4,7 +4,7 @@ namespace App\Domain\Rule;
 
 use DateTimeImmutable;
 
-class DateRangeResolver
+final class DateRangeResolver
 {
 
     /**

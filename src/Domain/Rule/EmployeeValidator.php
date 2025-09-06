@@ -4,12 +4,12 @@ namespace App\Domain\Rule;
 
 use App\Entity\Employee;
 use App\Repository\WorkTimeRepository;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use App\Domain\Exception\ValidationException;
+use App\Domain\Exception\EmployeeNotFoundException;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-class EmployeeValidator
+final class EmployeeValidator
 {
     private WorkTimeRepository $workTimeRepository;
     private ValidatorInterface $validator;
@@ -24,22 +24,26 @@ class EmployeeValidator
 
     public function check(Uuid $uuid, array $workTimes): void
     {
-        if (empty($workTimes) && !$this->workTimeRepository->em->getRepository(Employee::class)->find($uuid->toBinary())) {
-            throw new NotFoundHttpException('Employee not found');
+        if (empty($workTimes) && !$this->workTimeRepository->getEntityManager()->getRepository(Employee::class)->find($uuid->toBinary())) {
+            throw new EmployeeNotFoundException($uuid->toRfc4122());
         }
     }
 
     public function validateEmployeeData(array $data): Employee
     {
-        if (!isset($data['firstName']) || !isset($data['lastName'])) {
-            throw new BadRequestHttpException('Missing required fields: firstName, lastName');
+        $missingFields = [];
+        if (!isset($data['firstName'])) $missingFields[] = 'firstName';
+        if (!isset($data['lastName'])) $missingFields[] = 'lastName';
+        
+        if (!empty($missingFields)) {
+            throw ValidationException::missingFields($missingFields);
         }
 
         $employee = new Employee($data['firstName'], $data['lastName']);
 
         $errors = $this->validator->validate($employee);
         if (count($errors) > 0) {
-            throw new BadRequestHttpException((string) $errors);
+            throw ValidationException::invalidValue('employee', (string) $errors);
         }
 
         return $employee;
@@ -52,7 +56,7 @@ class EmployeeValidator
             ->find($employeeId);
 
         if (!$employee) {
-            throw new NotFoundHttpException('Employee not found');
+            throw new EmployeeNotFoundException($employeeId);
         }
 
         return $employee;

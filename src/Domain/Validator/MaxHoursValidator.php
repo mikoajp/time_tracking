@@ -1,26 +1,39 @@
 <?php
 
 
-namespace App\Domain\Rule;
+namespace App\Domain\Validator;
 
+use App\Domain\Service\WorkTimeCalculationService;
 use App\Entity\WorkTime;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use App\Domain\Exception\InvalidWorkTimeException;
 
-class MaxHoursValidator
+final class MaxHoursValidator
 {
-    private float $maxHoursPerDay;
-
-    public function __construct(float $maxHoursPerDay = 12.0)
-    {
-        $this->maxHoursPerDay = $maxHoursPerDay;
-    }
+    public function __construct(
+        private WorkTimeCalculationService $calculationService,
+        private float $maxHoursPerDay = 12.0
+    ) {}
 
     public function validate(WorkTime $workTime): void
     {
-        $diff = $workTime->getStart()->diff($workTime->getEnd());
-        $hours = $diff->h + ($diff->i / 60);
-        if ($hours > $this->maxHoursPerDay || $diff->days > 0) {
-            throw new BadRequestHttpException('Work time cannot exceed 12 hours or span multiple days');
+        if (!$this->calculationService->validateWorkTimeRange($workTime->getStart(), $workTime->getEnd(), $this->maxHoursPerDay)) {
+            throw new InvalidWorkTimeException(
+                'Work time cannot exceed 12 hours',
+                [
+                    'max_hours' => $this->maxHoursPerDay,
+                    'actual_hours' => $this->calculationService->calculateRoundedHours($workTime->getStart(), $workTime->getEnd())
+                ]
+            );
+        }
+        
+        if (!$this->calculationService->isWithinSameDay($workTime->getStart(), $workTime->getEnd())) {
+            throw new InvalidWorkTimeException(
+                'Work time cannot span multiple days',
+                [
+                    'start_date' => $workTime->getStart()->format('Y-m-d'),
+                    'end_date' => $workTime->getEnd()->format('Y-m-d')
+                ]
+            );
         }
     }
 }

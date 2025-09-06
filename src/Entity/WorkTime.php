@@ -43,7 +43,7 @@ class WorkTime
     private function calculateRoundedHours(\DateTimeInterface $start, \DateTimeInterface $end): float
     {
         $interval = $start->diff($end);
-        $totalMinutes = ($interval->h * 60) + $interval->i;
+        $totalMinutes = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
         return round($totalMinutes / 30) * 0.5;
     }
     public function getId(): ?int
@@ -75,6 +75,8 @@ class WorkTime
     public function setStart(\DateTimeInterface $start): self
     {
         $this->start = $start;
+        $this->startDay = (clone $start)->setTime(0, 0);
+        $this->hours = $this->calculateRoundedHours($this->start, $this->end);
         return $this;
     }
 
@@ -86,6 +88,7 @@ class WorkTime
     public function setEnd(\DateTimeInterface $end): self
     {
         $this->end = $end;
+        $this->hours = $this->calculateRoundedHours($this->start, $this->end);
         return $this;
     }
 

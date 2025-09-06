@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Domain\DTO\CreateEmployeeRequest;
 use App\Entity\Employee;
 use App\Repository\EmployeeRepository;
 
@@ -14,8 +15,8 @@ class EmployeeService
         $this->employeeRepository = $employeeRepository;
     }
 
-    public function createEmployee(array $data): Employee
+    public function createEmployee(CreateEmployeeRequest $request): Employee
     {
-        return $this->employeeRepository->createEmployee($data);
+        return $this->employeeRepository->createEmployee($request);
     }
 }

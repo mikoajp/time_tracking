@@ -2,14 +2,14 @@
 
 namespace App\Domain\Validator;
 
-use App\Domain\Rule\MaxHoursValidator;
-use App\Domain\Rule\UniqueDayValidator;
+use App\Domain\Validator\MaxHoursValidator;
+use App\Domain\Validator\UniqueDayValidator;
 use App\Entity\Employee;
 use App\Entity\WorkTime;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use App\Domain\Exception\ValidationException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-class WorkTimeValidator
+final class WorkTimeValidator
 {
     private ValidatorInterface $validator;
     private UniqueDayValidator $uniqueDayValidator;
@@ -27,26 +27,31 @@ class WorkTimeValidator
 
     public function validateWorkTimeData(?string $employeeId, ?string $start, ?string $end, Employee $employee = null): WorkTime
     {
-        if (empty($employeeId) || empty($start) || empty($end)) {
-            throw new BadRequestHttpException('Missing required fields: employeeId, start, end');
+        $missingFields = [];
+        if (empty($employeeId)) $missingFields[] = 'employeeId';
+        if (empty($start)) $missingFields[] = 'start';
+        if (empty($end)) $missingFields[] = 'end';
+        
+        if (!empty($missingFields)) {
+            throw ValidationException::missingFields($missingFields);
         }
 
         try {
             $startDate = new \DateTime($start);
             $endDate = new \DateTime($end);
         } catch (\Exception $e) {
-            throw new BadRequestHttpException('Invalid date format');
+            throw ValidationException::invalidFormat('date', 'YYYY-MM-DD HH:MM');
         }
 
         if ($endDate <= $startDate) {
-            throw new BadRequestHttpException('End time must be after start time');
+            throw ValidationException::invalidValue('end', 'End time must be after start time');
         }
 
         $workTime = new WorkTime($employee, $startDate, $endDate);
 
         $errors = $this->validator->validate($workTime);
         if (count($errors) > 0) {
-            throw new BadRequestHttpException((string) $errors);
+            throw ValidationException::invalidValue('workTime', (string) $errors);
         }
 
         $this->uniqueDayValidator->validate($workTime);

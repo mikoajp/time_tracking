@@ -19,16 +19,28 @@ services:
 
     App\Infra\HoursProcessor: ~
     App\Repository\WorkTimeRepository: ~
-    App\Service\Strategy\MonthlySummaryStrategy: ~
-    App\Service\Strategy\DailySummaryStrategy: ~
+    
+    App\Domain\Service\PayrollCalculator: ~
+    
+    App\Service\Strategy\MonthlySummaryStrategy:
+        arguments:
+            $payrollCalculator: '@App\Domain\Service\PayrollCalculator'
+    
+    App\Service\Strategy\DailySummaryStrategy:
+        arguments:
+            $payrollCalculator: '@App\Domain\Service\PayrollCalculator'
     App\Domain\Rule\SummaryRequestValidator: ~
     App\Domain\Rule\EmployeeValidator: ~
-    App\Service\DateRangeResolver: ~
-    App\Service\StrategyResolver: ~
     App\Service\WorkTimeService: ~
     App\Domain\Validator\WorkTimeValidator: ~
-    App\Domain\Rule\UniqueDayValidator: ~
-    App\Domain\Rule\MaxHoursValidator: ~
+    App\Domain\Validator\UniqueDayValidator: ~
+    App\Domain\Validator\MaxHoursValidator: ~
+
+    App\EventListener\ExceptionListener:
+        arguments:
+            $debug: '%kernel.debug%'
+        tags:
+            - { name: kernel.event_listener, event: kernel.exception }
 
     App\Service\SummaryService:
         arguments:

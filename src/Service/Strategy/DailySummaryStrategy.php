@@ -4,29 +4,27 @@ namespace App\Service\Strategy;
 
 use App\Domain\DTO\SummaryDTO;
 use App\Domain\Interface\SummaryStrategyInterface;
+use App\Domain\Service\PayrollCalculator;
 
-class DailySummaryStrategy implements SummaryStrategyInterface
+final class DailySummaryStrategy implements SummaryStrategyInterface
 {
-    private int $baseRate;
-
-    public function __construct(int $baseRate)
-    {
-        $this->baseRate = $baseRate;
-    }
+    public function __construct(
+        private PayrollCalculator $payrollCalculator
+    ) {}
 
     public function calculate(array $groupedHours, \DateTimeImmutable $date): SummaryDTO
     {
         $targetDay = $date->format('Y-m-d');
         $dayHours = $groupedHours[$targetDay] ?? 0;
-        $totalPay = $dayHours * $this->baseRate;
+        $payroll = $this->payrollCalculator->calculateDailyPay($dayHours);
 
         return new SummaryDTO(
             period: $targetDay,
             totalHours: $dayHours,
             standardHours: $dayHours,
             overtimeHours: 0,
-            totalPay: $totalPay,
-            baseRate: $this->baseRate,
+            totalPay: $payroll['totalPay']->getAmount(),
+            baseRate: $payroll['baseRate'],
             overtimeRate: null
         );
     }

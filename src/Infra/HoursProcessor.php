@@ -4,7 +4,7 @@ namespace App\Infra;
 
 use App\Entity\WorkTime;
 
-class HoursProcessor
+final class HoursProcessor
 {
     public function processWorkTimes(array $workTimes): array
     {
@@ -20,7 +20,6 @@ class HoursProcessor
 
     private function calculateRoundedHours(WorkTime $workTime): float
     {
-        $minutes = ($workTime->getEnd()->getTimestamp() - $workTime->getStart()->getTimestamp()) / 60;
-        return round($minutes / 30) * 0.5;
+        return $workTime->getHours(); // Use the already calculated hours from the entity
     }
 }

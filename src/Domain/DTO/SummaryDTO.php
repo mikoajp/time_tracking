@@ -2,7 +2,7 @@
 
 namespace App\Domain\DTO;
 
-readonly class SummaryDTO
+readonly final class SummaryDTO
 {
     public function __construct(
         public string $period,

@@ -1,13 +1,13 @@
 <?php
 
 
-namespace App\Domain\Rule;
+namespace App\Domain\Validator;
 
 use App\Entity\WorkTime;
 use App\Repository\WorkTimeRepository;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use App\Domain\Exception\WorkTimeConflictException;
 
-class UniqueDayValidator
+final class UniqueDayValidator
 {
     private WorkTimeRepository $repository;
 
@@ -25,7 +25,7 @@ class UniqueDayValidator
         ]);
 
         if (!empty($existing) && ($workTime->getId() === null || $existing[0]->getId() !== $workTime->getId())) {
-            throw new BadRequestHttpException('An employee may have only one daily entry');
+            throw new WorkTimeConflictException($workTime->getStartDay()->format('Y-m-d'));
         }
     }
 }

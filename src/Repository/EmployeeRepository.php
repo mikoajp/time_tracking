@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Domain\DTO\CreateEmployeeRequest;
 use App\Domain\Rule\EmployeeValidator;
 use App\Entity\Employee;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -20,9 +21,9 @@ class EmployeeRepository extends ServiceEntityRepository
         $this->employeeValidator = $employeeValidator;
     }
 
-    public function createEmployee(array $data): Employee
+    public function createEmployee(CreateEmployeeRequest $request): Employee
     {
-        $employee = $this->employeeValidator->validateEmployeeData($data);
+        $employee = new Employee($request->firstName, $request->lastName);
 
         $this->getEntityManager()->persist($employee);
         $this->getEntityManager()->flush();
